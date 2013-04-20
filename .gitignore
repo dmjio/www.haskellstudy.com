@@ -7,3 +7,5 @@ posts
 about.rst
 contact.markdown
 site.hs
+_cache
+_site
