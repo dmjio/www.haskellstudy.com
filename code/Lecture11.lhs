@@ -1,4 +1,4 @@
-
+\begin{code}
 -----------------------------------------------------------------------------------------------------------------
 -- Exercise 11.1. Give a natural deduction proof of (alpha -> beta) -> (beta -> sigma) -> (alpha -> sigma)     --
 -- What standard Haskell function has a similar type?                                                          --
@@ -107,3 +107,4 @@ eval_p p  = eval p where
 main = do
   print $ eval_parse "(1.99*(1.3+4.5))"
 
+\end{code}
