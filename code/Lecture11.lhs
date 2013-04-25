@@ -65,39 +65,62 @@ prefix p op = pp where
 instance Read Proposition where
   readsPrec _ = readP_to_S prop_parse
 
-data Expression = DoubleValue Double   --Precendence = { Product, Quotient, Difference, Sum }
+data Expression = DoubleValue { num :: Double }   --Precendence = { Product, Quotient, Difference, Sum }
                 | Sum Expression Expression
                 | Difference Expression Expression
                 | Product Expression Expression
                 | Quotient Expression Expression
-                deriving (Show, Eq, Ord)
+                deriving (Eq, Ord, Show)
 
-dub :: ReadP Expression
-dub = do
+duba :: ReadP Expression
+duba = do
   a <- munch1 isDigit
   char '.'
   b <- munch1 isDigit
   return $ DoubleValue (read (a++"."++b) :: Double)
 
-expr_parse :: ReadP Expression
-expr_parse = prec0 where
-  wdub = skipSpaces >> dub 
+dubb :: ReadP Expression
+dubb = do
+  a <- munch1 isDigit
+  return $ DoubleValue (read a :: Double)
+
+dubc :: ReadP Expression
+dubc = do
+  a <- munch1 isDigit
+  char '.'
+  return $ DoubleValue (read a :: Double)
+
+dubd :: ReadP Expression
+dubd = do
+  char '.'
+  a <- munch1 isDigit
+  return $ DoubleValue $ (read a :: Double) * 0.1
+
+negs :: ReadP Expression
+negs = do
+  char '-'
+  a <- dub
+  return $ DoubleValue $ (num a) * (-1)
+
+dub = duba +++ dubb +++ dubc +++ dubd +++ negs
+
+exprParse :: ReadP Expression
+exprParse = prec0 where
+  wdub = skipSpaces >> dub
   wchar c = skipSpaces >> char c
-  cparse val parser = fmap (const val) parser
-  prec0 = chainl1 prec1 $ cparse Sum $ wchar '+'
-  prec1 = chainl1 prec2 $ cparse Difference $ wchar '-'
-  prec2 = chainl1 prec3 $ cparse Quotient $ wchar '/'
-  prec3 = chainl1 prec4 $ cparse Product $ wchar '*'
-  prec4 = dub +++ parenparse prec0
+  cparse val = fmap (const val) 
+  prec0 = chainl1 prec1 $ (cparse Sum $ wchar '+') +++ (cparse Difference $ wchar '-')
+  prec1 = chainl1 prec2 $ (cparse Quotient $ wchar '/') +++ (cparse Product $ wchar '*')
+  prec2 = wdub +++ parenparse prec0
   parenparse = between (wchar '(') (wchar ')')
 
 instance Read Expression where
-  readsPrec _ = readP_to_S expr_parse
+  readsPrec _ = readP_to_S exprParse
 
-eval_parse x = eval_p (read x :: Expression)
+evalParse x = evalP (read x :: Expression)
 
-eval_p :: Expression -> Double
-eval_p p  = eval p where
+evalP :: Expression -> Double
+evalP = eval where
   eval (Product a b) = eval a * eval b
   eval (Sum a b) = eval a + eval b
   eval (Difference a b) = eval a - eval b
@@ -105,6 +128,8 @@ eval_p p  = eval p where
   eval (DoubleValue val) = val
 
 main = do
-  print $ eval_parse "(1.99*(1.3+4.5))"
-
+  print $ evalParse "(-5.4/(.1*4))"
+  print $ evalParse "(1.0+(1.0+4.3))"
+  print $ evalParse ".04+10.7/-.3"
+  print $ evalParse ".04+10.7/-9.3"
 \end{code}
